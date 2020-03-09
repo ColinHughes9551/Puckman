@@ -53,59 +53,12 @@ class GRAPH(pygame.sprite.Sprite):
         self.screen_rect = puck_game.screen.get_rect()
         self.settings = puck_game.settings
 
-        # flags that hold cost of each direction, with -1 meaning no valid path
-        self.up = -1
-        self.down = -1
-        self.left = -1
-        self.right = -1
-
         self.image = pygame.image.load('sprites/tiles/graph.png')
         self.rect = self.image.get_rect()
 
         # Update rect object from given x and y
         self.rect.x = x
         self.rect.y = y
-
-    def generate_costs(self, maze):
-        self.up = self._costs(maze, 0, -1)
-        self.down = self._costs(maze, 0, 1)
-        self.left = self._costs(maze, -1, 0)
-        self.right = self._costs(maze, 1, 0)
-        # test values
-        print(self.up, self.down, self.left, self.right)
-
-    def _costs(self, maze, x_dir=0, y_dir=0):
-        # save position
-        temp_x = self.rect.x
-        temp_y = self.rect.y
-        cost = 0
-        _exit = False
-        while not _exit:
-            cost += 1
-            # adjust position
-            self.rect.x = temp_x + 8*cost*x_dir
-            self.rect.y = temp_y + 8*cost*y_dir
-
-            # get a list of all nodes the graph collides with
-            node_col_list = pygame.sprite.spritecollide(self, maze.nodes, False)
-            graph_col_list = pygame.sprite.spritecollide(self, maze.graph, False)
-
-            # Check the list of colliding sprites, and check if they have collisions enabled
-            for graph in graph_col_list:
-                if graph != self:
-                    _exit = True
-            if not _exit:
-                for node in node_col_list:
-                    if node.collision:
-                        cost = -1
-                        _exit = True
-
-        # return to previous position
-        self.rect.x = temp_x
-        self.rect.y = temp_y
-
-        # return calculated cost
-        return cost
 
 
 class PELLET(pygame.sprite.Sprite):
@@ -171,9 +124,6 @@ class MAZE:
                     w += 1
                 h += 1
                 w = 0
-        # generate the costs for all graph nodes
-        for graph in self.graph:
-            graph.generate_costs(self)
 
     def update_pellets(self):
         # reassigns sprites to all pellets, use when resetting level
@@ -195,7 +145,7 @@ class MAZE:
 
     def blitme(self):
         self.nodes.draw(self.screen)
-        self.graph.draw(self.screen)
+        # self.graph.draw(self.screen)
         self.pellets.draw(self.screen)
         """Draw the maze based on current nodes
         for w in range(self.settings.maze_width):

@@ -2,6 +2,7 @@ import sys
 import pygame
 from settings import SETTINGS
 from puckman import PUCK
+from ghosts import  GHOST
 from maze_node import NODE
 from maze_node import MAZE
 
@@ -22,6 +23,7 @@ class GAME:
         self.score = 0
 
         self.puck = PUCK(self)
+        self.ghost = GHOST(self, 0)
         self.maze = MAZE(self)
         self.clock = pygame.time.Clock()
         # self.bullets = pygame.sprite.Group()
@@ -31,6 +33,7 @@ class GAME:
         while True:
             self._check_events()
             self.puck.update()
+            self.ghost.update()
             self._update_screen()
             self.clock.tick_busy_loop(60)
 
@@ -40,6 +43,7 @@ class GAME:
         self.screen.fill(self.settings.bg_color)
         self.maze.blitme()
         self.puck.blitme()
+        self.ghost.blitme()
         # Make the most recently drawn screen visible.
         pygame.display.flip()
 

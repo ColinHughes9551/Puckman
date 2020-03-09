@@ -14,4 +14,4 @@ class SETTINGS:
         self.p_pellet_score = 40
 
         # puckman should probably never move any speed besides 1
-        self.puck_speed = 1
+        self.puck_speed = 1.35
