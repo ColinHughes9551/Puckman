@@ -12,6 +12,7 @@ class SETTINGS:
 
         self.pellet_score = 10
         self.p_pellet_score = 40
+        self.ghost_score = 200
 
         # puckman should probably never move any speed besides 1
         self.puck_speed = 1.35

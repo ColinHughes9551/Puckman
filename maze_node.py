@@ -1,4 +1,3 @@
-import sys
 import pygame
 
 
@@ -40,27 +39,6 @@ class NODE(pygame.sprite.Sprite):
             return "-"
 
 
-class GRAPH(pygame.sprite.Sprite):
-    """A class to manage graph nodes on the map."""
-
-    def __init__(self, puck_game, x, y):
-        # Call the parent class (Sprite) constructor
-        pygame.sprite.Sprite.__init__(self)
-
-        """Initialize the puck and set its starting position."""
-        self.game = puck_game
-        self.screen = puck_game.screen
-        self.screen_rect = puck_game.screen.get_rect()
-        self.settings = puck_game.settings
-
-        self.image = pygame.image.load('sprites/tiles/graph.png')
-        self.rect = self.image.get_rect()
-
-        # Update rect object from given x and y
-        self.rect.x = x
-        self.rect.y = y
-
-
 class PELLET(pygame.sprite.Sprite):
     """A class to manage pellets on the map."""
 
@@ -98,7 +76,6 @@ class MAZE:
         self.maze_text = open("maze.txt", "r")
         self.nodes = pygame.sprite.Group()
         self.pellets = pygame.sprite.Group()
-        self.graph = pygame.sprite.Group()
         with open("maze.txt") as maze_text:
             w = 0
             h = 0
@@ -112,15 +89,6 @@ class MAZE:
                     if ch == 'P':
                         temp_pellet = PELLET(self.game, (w*8+4), (h*8+4), True)
                         self.pellets.add(temp_pellet)
-                    if ch == 'g':
-                        temp_graph = GRAPH(self.game, (w*8-4), (h*8-4))
-                        self.graph.add(temp_graph)
-                    if ch == 'G':
-                        # exception case for when pellet and intersection overlap
-                        temp_pellet = PELLET(self.game, (w*8+7), (h*8+7), False)
-                        self.pellets.add(temp_pellet)
-                        temp_graph = GRAPH(self.game, (w*8-4), (h*8-4))
-                        self.graph.add(temp_graph)
                     w += 1
                 h += 1
                 w = 0
@@ -145,7 +113,6 @@ class MAZE:
 
     def blitme(self):
         self.nodes.draw(self.screen)
-        # self.graph.draw(self.screen)
         self.pellets.draw(self.screen)
         """Draw the maze based on current nodes
         for w in range(self.settings.maze_width):
