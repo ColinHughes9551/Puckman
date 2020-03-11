@@ -1,4 +1,5 @@
 import pygame
+from timers import TIMER
 
 
 class NODE(pygame.sprite.Sprite):
@@ -72,6 +73,12 @@ class MAZE:
         self.screen_rect = puck_game.screen.get_rect()
         self.settings = puck_game.settings
 
+        self.image = pygame.image.load('sprites/tiles/maze.png')
+        self.rect = self.image.get_rect()
+
+        self.timer_white = TIMER(self, 0, False)
+        self.game.timers.append(self.timer_white)
+
         # create array of nodes
         self.maze_text = open("maze.txt", "r")
         self.nodes = pygame.sprite.Group()
@@ -111,10 +118,22 @@ class MAZE:
                 return False
         return True
 
+    def refresh_pellets(self):
+        # make all pellets visible again
+        for pellet in self.pellets:
+            pellet.visible = True
+        self.update_pellets()
+
     def blitme(self):
-        self.nodes.draw(self.screen)
+        # manage white maze flash
+        if self.timer_white.count > 0:
+            self.image = pygame.image.load('sprites/tiles/maze_white.png')
+        elif self.timer_white.count == 0:
+            self.image = pygame.image.load('sprites/tiles/maze.png')
+            # avoid repeat loading of sprite
+            self.timer_white.count = -1
+
+        self.screen.blit(self.image, self.rect)
+        # don't actually need to draw the collision boxes, but they're there to look at anyway
+        # self.nodes.draw(self.screen)
         self.pellets.draw(self.screen)
-        """Draw the maze based on current nodes
-        for w in range(self.settings.maze_width):
-            for h in range(self.settings.maze_height):
-                self.screen.blit(self.open, [w*8, h*8])"""

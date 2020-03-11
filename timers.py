@@ -1,7 +1,3 @@
-import sys
-import pygame
-
-
 class TIMER:
     """A class to manage timers and counters."""
 

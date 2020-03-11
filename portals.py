@@ -17,8 +17,13 @@ class PORTAL(pygame.sprite.Sprite):
         self.id = portal_id
 
         # Load the portal image and get it's rect
-        self.image = pygame.image.load('sprites/puck/closed16.png')
-        self.rect = self.image.get_rect()
+        if self.id:
+            self.image0 = pygame.image.load('sprites/tiles/portal/o0.png')
+            self.image1 = pygame.image.load('sprites/tiles/portal/o1.png')
+        else:
+            self.image0 = pygame.image.load('sprites/tiles/portal/b0.png')
+            self.image1 = pygame.image.load('sprites/tiles/portal/b1.png')
+        self.rect = self.image0.get_rect()
 
         # starting position
         if portal_id:
@@ -28,5 +33,8 @@ class PORTAL(pygame.sprite.Sprite):
         self.rect.y = 112
 
     def blitme(self):
-        """Draw the puckin' guy at its current location."""
-        self.screen.blit(self.image, self.rect)
+        # alternate between 2 images
+        if self.game.timer_1f.count:
+            self.screen.blit(self.image1, self.rect)
+        else:
+            self.screen.blit(self.image0, self.rect)

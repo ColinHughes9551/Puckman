@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+from timers import TIMER
 
 
 class GHOST(pygame.sprite.Sprite):
@@ -19,12 +20,48 @@ class GHOST(pygame.sprite.Sprite):
         self.speed = 1.33
         # 0 = red, 1 = pink, 2 = blue, 3 = orange
         self.behavior = behavior
-        # 0 = chase, 1 = scatter, 2 = blue, 3 = dead, 4 = ghost house
+        # 0 = chase, 1 = scatter, 2 = blue, 3 = dead
         self.state = 1
+        # variables to delay ghosts exiting the spawn
+        self.spawn_delay = 0
+        self.wait = 0
 
         # Load the ghost image and get its rect
-        self.image = pygame.image.load('sprites/ghosts/ghost_test.png')
-        self.rect = self.image.get_rect()
+        self.image_eye = pygame.image.load('sprites/ghosts/eyes/u.png')
+        self.imagea = pygame.image.load('sprites/ghosts/empty.png')
+        self.imageb = pygame.image.load('sprites/ghosts/empty.png')
+        # load all eye sprites into memory
+        self.image_eyeu = pygame.image.load('sprites/ghosts/eyes/u.png')
+        self.image_eyel = pygame.image.load('sprites/ghosts/eyes/l.png')
+        self.image_eyed = pygame.image.load('sprites/ghosts/eyes/d.png')
+        self.image_eyer = pygame.image.load('sprites/ghosts/eyes/r.png')
+        self.image_eyee = pygame.image.load('sprites/ghosts/eyes/e.png')
+
+        # sprites for blue/white mode
+        self.imagef0 = pygame.image.load('sprites/ghosts/f0.png')
+        self.imagef1 = pygame.image.load('sprites/ghosts/f1.png')
+        self.imagef2 = pygame.image.load('sprites/ghosts/f2.png')
+        self.imagef3 = pygame.image.load('sprites/ghosts/f3.png')
+        self.image_empty = pygame.image.load('sprites/ghosts/empty.png')
+
+        # set color based on behavior
+        if self.behavior == 0:
+            self.image0 = pygame.image.load('sprites/ghosts/r0.png')
+            self.image1 = pygame.image.load('sprites/ghosts/r1.png')
+        if self.behavior == 1:
+            self.image0 = pygame.image.load('sprites/ghosts/p0.png')
+            self.image1 = pygame.image.load('sprites/ghosts/p1.png')
+        if self.behavior == 2:
+            self.image0 = pygame.image.load('sprites/ghosts/b0.png')
+            self.image1 = pygame.image.load('sprites/ghosts/b1.png')
+        if self.behavior == 3:
+            self.image0 = pygame.image.load('sprites/ghosts/o0.png')
+            self.image1 = pygame.image.load('sprites/ghosts/o1.png')
+
+        self.rect = self.image0.get_rect()
+
+        self.timer_ani = TIMER(self, 12, True)
+        self.game.timers.append(self.timer_ani)
         # Store an integer value for the ghosts position
         self.x = self.rect.x
         self.y = self.rect.y
@@ -33,23 +70,31 @@ class GHOST(pygame.sprite.Sprite):
         if behavior == 0:
             self.corner_x = self.settings.screen_width - 32
             self.corner_y = 0
-            self.x = 104
-            self.y = 88
+            self.spawn_x = 104
+            self.spawn_y = 88
+            self.spawn_delay = 30
         if behavior == 1:
             self.corner_x = 32
             self.corner_y = 0
-            self.x = 104
-            self.y = 88
+            self.spawn_x = 104
+            self.spawn_y = 88
+            self.spawn_delay = 120
         if behavior == 2:
             self.corner_x = self.settings.screen_width - 8
             self.corner_y = self.settings.screen_height
-            self.x = 120
-            self.y = 88
+            self.spawn_x = 120
+            self.spawn_y = 88
+            self.spawn_delay = 240
         if behavior == 3:
             self.corner_x = 8
             self.corner_y = self.settings.screen_height
-            self.x = 88
-            self.y = 88
+            self.spawn_x = 88
+            self.spawn_y = 88
+            self.spawn_delay = 320
+
+        self.wait = self.spawn_delay
+        self.x = self.spawn_x
+        self.y = self.spawn_y
 
         # Key flag, repurposed to show intended direction
         self.key_right = False
@@ -99,15 +144,16 @@ class GHOST(pygame.sprite.Sprite):
                                           (self.moving_down - self.moving_up)):
                 self._clear_movement()
 
-            # only move up and down if not moving left and right
-            if self.moving_right and self.rect.right < self.screen_rect.right:
-                self.x += 1
-            if self.moving_left and self.rect.left > 0:
-                self.x -= 1
-            if self.moving_down and self.rect.bottom < self.screen_rect.bottom:
-                self.y += 1
-            if self.moving_up and self.rect.top > 0:
-                self.y -= 1
+            if not self.wait:
+                # only move up and down if not moving left and right
+                if self.moving_right and self.rect.right < self.screen_rect.right:
+                    self.x += 1
+                if self.moving_left and self.rect.left > 0:
+                    self.x -= 1
+                if self.moving_down and self.rect.bottom < self.screen_rect.bottom:
+                    self.y += 1
+                if self.moving_up and self.rect.top > 0:
+                    self.y -= 1
 
             # Update rect object from x and y
             self.rect.x = self.x
@@ -120,12 +166,14 @@ class GHOST(pygame.sprite.Sprite):
             self.speed = 1
             if self.state != self.game.ghost_state:
                 self.state = self.game.ghost_state
-                self._turnaround()
+                self.turnaround()
         # change speed when in a different state
         if self.state == 2:
             self.speed = .5
         if self.state == 3:
             self.speed = 2
+        if self.wait:
+            self.wait -= 1
 
     def _clear_intent(self):
         self.key_right = False
@@ -160,7 +208,8 @@ class GHOST(pygame.sprite.Sprite):
 
     def _check_portal_collision(self, game):
         # get a list of any portals the ghost is touching
-        portal_col_list = pygame.sprite.spritecollide(self, game.portals, False, collided=pygame.sprite.collide_rect_ratio(0.1))
+        portal_col_list = pygame.sprite.spritecollide(self, game.portals, False,
+                                                      collided=pygame.sprite.collide_rect_ratio(0.1))
 
         if not portal_col_list:
             self.portal_flag = False
@@ -238,12 +287,13 @@ class GHOST(pygame.sprite.Sprite):
             # go in front of the ghost house
             target_x = self.game.settings.screen_width/2
             target_y = (self.game.settings.screen_height/2)-40
-            if math.floor(self.rect.x/4) == math.floor(target_x/4) and math.floor(self.rect.y/4) == math.floor(target_y/4):
+            if math.floor(self.rect.x/4) == math.floor(target_x/4) and \
+                    math.floor(self.rect.y/4) == math.floor(target_y/4):
                 # revert to normal when you pass the ghost house
+                self.wait = 5
                 self.state = self.game.ghost_state
 
         # choose next direction, prioritizing up, left, down, then right, skipping directions with walls or backwards
-        temp_distance = 0.0
         short_distance = 9000.1
         if not self._check_node_collision(self.game, 0, -1) and not temp_down:
             temp_distance = self.heuristic(self.x + (8 * 0), self.y + (8 * -1), target_x, target_y)
@@ -275,12 +325,19 @@ class GHOST(pygame.sprite.Sprite):
             self.key_left = temp_left
             self.key_down = temp_down
             self.key_right = temp_right
-            self._turnaround()
+            self.turnaround()
 
-    def heuristic(self, x1, y1, x2, y2):
-        return math.sqrt( ((x2 - x1)**2) + ((y2 - y1)**2) )
+    def restart(self):
+        self.x = self.spawn_x
+        self.y = self.spawn_y
+        self.wait = self.spawn_delay
+        self.state = 1
 
-    def _turnaround(self):
+    @staticmethod
+    def heuristic(x1, y1, x2, y2):
+        return math.sqrt(((x2 - x1)**2) + ((y2 - y1)**2))
+
+    def turnaround(self):
         # invert intended direction
         if self.key_up or self.key_down:
             temp = self.key_up
@@ -292,5 +349,38 @@ class GHOST(pygame.sprite.Sprite):
             self.key_right = temp
 
     def blitme(self):
-        """Draw the puckin' guy at its current location."""
-        self.screen.blit(self.image, self.rect)
+        # correct eye direction
+        if self.moving_up:
+            self.image_eye = self.image_eyeu
+        if self.moving_left:
+            self.image_eye = self.image_eyel
+        if self.moving_down:
+            self.image_eye = self.image_eyed
+        if self.moving_right:
+            self.image_eye = self.image_eyer
+
+        # body color
+        if self.state == 2:
+            # no eyes when scared
+            self.image_eye = self.image_eyee
+            # specify further based on time remaining in power pellet
+            if self.game.timer_subpower.count:
+                self.imagea = self.imagef2
+                self.imageb = self.imagef3
+            else:
+                self.imagea = self.imagef0
+                self.imageb = self.imagef1
+        elif self.state == 3:
+            # have no body if transparent
+            self.imagea = self.image_empty
+            self.imageb = self.image_empty
+        else:
+            self.imagea = self.image0
+            self.imageb = self.image1
+
+        if self.game.timer_1f.count > 6:
+            self.screen.blit(self.imageb, self.rect)
+        else:
+            self.screen.blit(self.imagea, self.rect)
+
+        self.screen.blit(self.image_eye, self.rect)
